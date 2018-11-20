@@ -28,7 +28,11 @@ app.secret_key = 'some key'
 #Define a route to hello function
 @app.route('/')
 def hello():
-	return render_template('index.html')
+	cur = conn.cursor()
+	cur.execute("SELECT * FROM flight")
+	data = cur.fetchall()
+	print(data)
+	return render_template('index.html', data = data)
 
 @app.route('/login_customer')
 def login_customer():

@@ -6,7 +6,6 @@
 </head>
 
 <body>
-{% if not message %}
 	<h3>Login</h3>
 	<p><a href="/login_customer">Login as a cutomer</a></p>
 	<p><a href="/login_agent">Login as a booking agent</a></p>
@@ -15,25 +14,38 @@
 	<p><a href="/register_customer">Register as a customer</a></p>
 	<p><a href="/register_agent">Register as an booking agnet</a></p>
 	<p><a href="/register_staff">Register as a staff</a></p>
-{% endif %}
+	<h3>Incoming flights</h4> </br>
+	<table>
+		<tbody>
+		{% for item in data %}
+		<tr>
+			<td>airline</td>
+			<td>flight number</td>
+			<td>depature airport</td>
+			<td>departure time</td>
+			<td>arrival airport</td>
+			<td>arrival time</td>
+			<td>price</td>
+			<td>status</td>
+			<td>airplane id</td>
+		</tr>
+		<tr>
+			<td>{{item.airline_name}}</td>
+			<td>{{item.flight_num}}</td>
+			<td>{{item.departure_airport}}</td>
+			<td>{{item.departure_time}}</td>
+			<td>{{item.arrival_airport}}</td>
+			<td>{{item.arrival_time}}</td>
+			<td>{{item.price}}</td>
+			<td>{{item.status}}</td>
+			<td>{{item.airplane_id}}</td>
+		</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	
 
-{% if message %}
-	<a href="/logout">Logout</a>
-	<a href="/remove_account">Remove Account</a>
-	<p class="message">You are logged in {{message}}. You have {{num}} follower(s)</p> </br>
-	<a href="/tweets">View your tweets</a> </br>
-	<a href="/find_people">Find people to follow</a> </br>
-	<a href="/unfollow">Unfollow someone</a> </br>
-	<a href="/view_followed">View people you have followed</a> </br>
-	</br>
-
-        <h4>15 most recent tweets from you and your followers </h4> </br>
-
-	{% for line in tweets%}
-	        <p>{{line}}</p>
-	        <hr>
-	{% endfor %}
-	{% endif %}
+	
 </body>
 
 </html>
