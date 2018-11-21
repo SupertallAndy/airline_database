@@ -19,7 +19,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       port=3307,
+                       #port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -40,7 +40,7 @@ def search_flight():
 	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
 	cursor.execute(query, (departure_airport, arrival_airport))
 	data = cursor.fetchall()
-	print(data)
+	#print(data)
 	return render_template('index.html', data = data)
 
 @app.route('/logout')
