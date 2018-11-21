@@ -28,9 +28,18 @@ app.secret_key = 'some key'
 #Define a route to hello function
 @app.route('/')
 def hello():
-	cur = conn.cursor()
-	cur.execute("SELECT * FROM flight")
-	data = cur.fetchall()
+	return render_template('index.html')
+
+@app.route('/search_flight', methods=['POST'])
+def search_flight():
+	departure_airport = request.form['departure_airport']
+	arrival_airport = request.form['arrival_airport']
+	print(departure_airport)
+
+	cursor = conn.cursor()
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
+	cursor.execute(query, (departure_airport, arrival_airport))
+	data = cursor.fetchall()
 	print(data)
 	return render_template('index.html', data = data)
 

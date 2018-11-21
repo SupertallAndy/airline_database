@@ -4,7 +4,7 @@
 <head>
 
 </head>
-
+<title>Airline Database</title>
 <body>
 	<h3>Login</h3>
 	<p><a href="/login_customer">Login as a cutomer</a></p>
@@ -14,7 +14,16 @@
 	<p><a href="/register_customer">Register as a customer</a></p>
 	<p><a href="/register_agent">Register as an booking agnet</a></p>
 	<p><a href="/register_staff">Register as a staff</a></p>
-	<h3>Incoming flights</h4> </br>
+	
+	<h3>Search for upcoming flights</h4>
+		<form action="/search_flight" method="POST">
+			<input type="text" name = "departure_airport" placeholder="departure airport" required/> </br>
+			<input type="text" name = "arrival_airport" placeholder="arrival airport" required/></br>
+			<input type="submit" value = Search />
+			{% if error %}
+				<p class="error"><strong>Error:</strong> {{error}}</p>
+			{% endif %}
+		</form>
 	<table>
 		<tbody>
 		{% for item in data %}
