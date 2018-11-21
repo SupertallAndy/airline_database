@@ -43,6 +43,10 @@ def search_flight():
 	print(data)
 	return render_template('index.html', data = data)
 
+@app.route('/logout')
+def logout():
+	return render_template('index.html')
+
 @app.route('/login_customer')
 def login_customer():
 	return render_template('login_customer.html')
@@ -52,15 +56,17 @@ def login_customer():
 def login_as_customer_auth():
 	username = request.form['username']
 	password = request.form['password']
-	
+
 	cursor = conn.cursor()
-	query = 'SELECT * FROM customer WHERE email = %s AND password = %s'
-	cursor.execute(query, (username, password))
+	query = 'SELECT * FROM customer WHERE email = %s'
+	
+	cursor.execute(query, (username))
 	data = cursor.fetchone()
+
 	error = None
 	if data:
-		if md5_crypt.verify(password, exist['password']):
-			return redirect(url_for('customer_home'))
+		if md5_crypt.verify(password, data['password']):
+			return render_template('loggedin_customer.html', data = data)
 		else:
 			error = 'Invalid password'
 			return render_template('login_customer.html', error = error)
@@ -84,7 +90,7 @@ def login_as_agent_auth():
 	data = cursor.fetchone()
 	error = None
 	if data:
-		if md5_crypt.verify(password, exist['password']):
+		if md5_crypt.verify(password, data['password']):
 			return redirect(url_for('agent_home'))
 		else:
 			error = 'Invalid password'
@@ -104,8 +110,8 @@ def login_as_staff_auth():
 	password = request.form['password']
 	
 	cursor = conn.cursor()
-	query = 'SELECT * FROM airline_staff WHERE email = %s AND password = %s'
-	cursor.execute(query, (username, password))
+	query = 'SELECT * FROM airline_staff WHERE email = %s'
+	cursor.execute(query, (username))
 	data = cursor.fetchone()
 	error = None
 	if data:
@@ -140,11 +146,12 @@ def registerascustomerAuth():
 	passport_expiration = request.form['passport_expiration']
 	passport_country = request.form['passport_country']
 	date_of_birth = request.form['date_of_birth']
-        
+    
+	print("***************" + email + "*************** ")
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM user WHERE email = %s'
+	query = 'SELECT * FROM customer WHERE email = %s'
 	cursor.execute(query, (email))
 	#stores the results in a variable
 	data = cursor.fetchone()
@@ -158,7 +165,7 @@ def registerascustomerAuth():
 	else:
 		encoded_password = md5_crypt.encrypt(password)
 		ins = 'INSERT INTO customer VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-		cursor.execute(ins, (email, encoded_password, name, building_number, street, city, state, phone_number, passport_number, passport_expiration, passport_country, date_of_birth ))
+		cursor.execute(ins, (email, name, encoded_password, building_number, street, city, state, phone_number, passport_number, passport_expiration, passport_country, date_of_birth ))
 		conn.commit()
 		cursor.close()
 		return render_template('index.html')

@@ -2,17 +2,33 @@
 <head>
 </head>
 <body>
+<h2>Customer register</h2>
 <form action="/registerCustomerAuth" method="POST">
-	<input type="text" name = "email" placeholder="email" required/> </br>
+    email:<br>
+    <input type="text" name = "email" placeholder="email" required/> </br>
+    password:<br>
     <input type="password" name = "password" placeholder="password" required/></br>
+    name:<br>
     <input type="text" name = "name" placeholder="name" required/></br>
-    <input type="text" name = "building_number" placeholder="building number" required/></br>
-    <input type="text" name = "street" placeholder="street" required/></br>
-    <input type="text" name = "state" placeholder="street" required/></br>
+    date of birth:<br>
+    <input type="date" name = "date_of_birth" placeholder="date of birth" required/></br>
+    state:<br>
+    <input type="text" name = "state" placeholder="state" required/></br>
+    city:<br>
     <input type="text" name = "city" placeholder="city" required/></br>
+    street:<br>
+    <input type="text" name = "street" placeholder="street" required/></br>
+    building number:<br>
+    <input type="text" name = "building_number" placeholder="building number" required/></br>
+    phone number:<br>
     <input type="text" name = "phone_number" placeholder="phone number" required/></br>
+    passport number:<br>
+    <input type="text" name = "passport_number" placeholder="passport number" required/></br>
+    passport country:<br>
     <input type="text" name = "passport_country" placeholder="passport country" required/></br>
+    passport expiration:<br>
     <input type="date" name = "passport_expiration" placeholder="passport expiration" required/></br>
+    
 	<input type="submit" value = Register />
 	{% if error %}
 		<p class="error"><strong>Error:</strong> {{error}}</p>
