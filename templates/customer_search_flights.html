@@ -1,0 +1,44 @@
+<html>
+<head>
+</head>
+<body>
+    <h1>Search Flight</h1>
+    <form action="/customer/search_flight" method="POST">
+        <input type="text" name = "departure_airport" placeholder="departure airport" required/> </br>
+        <input type="text" name = "arrival_airport" placeholder="arrival airport" required/></br>
+        <input type="submit" value = Search />
+        {% if error %}
+            <p class="error"><strong>Error:</strong> {{error}}</p>
+        {% endif %}
+    </form>
+    <table>
+        <tbody>
+            {% for item in data %}
+            <tr>
+                <td>airline</td>
+                <td>flight number</td>
+                <td>depature airport</td>
+                <td>departure time</td>
+                <td>arrival airport</td>
+                <td>arrival time</td>
+                <td>price</td>
+                <td>status</td>
+                <td>airplane id</td>
+            </tr>
+            <tr>
+                <td>{{item.airline_name}}</td>
+                <td>{{item.flight_num}}</td>
+                <td>{{item.departure_airport}}</td>
+                <td>{{item.departure_time}}</td>
+                <td>{{item.arrival_airport}}</td>
+                <td>{{item.arrival_time}}</td>
+                <td>{{item.price}}</td>
+                <td>{{item.status}}</td>
+                <td>{{item.airplane_id}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>    
+    <p><a href="/customer/home">Home</a></p>
+</body>
+</html>

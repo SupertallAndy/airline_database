@@ -19,7 +19,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       #port=3307,
+                       port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -32,6 +32,8 @@ def hello():
 
 @app.route('/search_flight', methods=['POST'])
 def search_flight():
+	rule = request.path
+	print("*"*10, rule)
 	departure_airport = request.form['departure_airport']
 	arrival_airport = request.form['arrival_airport']
 	print(departure_airport)
@@ -45,9 +47,10 @@ def search_flight():
 
 @app.route('/logout')
 def logout():
+	session.pop('username', None)
 	return render_template('index.html')
 
-@app.route('/login_customer')
+@app.route('/customer/login')
 def login_customer():
 	return render_template('login_customer.html')
 
@@ -66,15 +69,16 @@ def login_as_customer_auth():
 	error = None
 	if data:
 		if md5_crypt.verify(password, data['password']):
-			return render_template('loggedin_customer.html', data = data)
+			session['username'] = username
+			return redirect(url_for('customer/home'))
 		else:
 			error = 'Invalid password'
 			return render_template('login_customer.html', error = error)
 	else:
 		error = 'Invalid username'
 		return render_template('login_customer.html', error = error)
-	
-@app.route('/login_agent')
+
+@app.route('/agent/login')
 def login_agent():
 	return render_template('login_agent.html')
 
@@ -99,7 +103,7 @@ def login_as_agent_auth():
 		error = 'Invalid username'
 		return render_template('login_agent.html', error = error)
 
-@app.route('/login_staff')
+@app.route('/staff/login')
 def login_staff():
 	return render_template('login_staff.html')
 
@@ -115,7 +119,7 @@ def login_as_staff_auth():
 	data = cursor.fetchone()
 	error = None
 	if data:
-		if md5_crypt.verify(password, exist['password']):
+		if md5_crypt.verify(password, data['password']):
 			return redirect(url_for('agent_home'))
 		else:
 			error = 'Invalid password'
@@ -124,9 +128,8 @@ def login_as_staff_auth():
 		error = 'Invalid username'
 		return render_template('login_staff.html', error = error)
 
-
 #Define route for register
-@app.route('/register_customer')
+@app.route('/customer/register')
 def register_customer():
 	return render_template('register_customer.html')
 
@@ -158,7 +161,6 @@ def registerascustomerAuth():
 	#use fetchall() if you are expecting more than 1 data row
 	error = None
 	if(data):
-		
 		#If the previous query returns data, then user exists
 		error = "This email has already registered"
 		return render_template('register_customer.html', error = error)
@@ -170,8 +172,53 @@ def registerascustomerAuth():
 		cursor.close()
 		return render_template('index.html')
 
+@app.route("/customer/home")
+def home_customer():
+	username = session['username']
+	return render_template('home_customer.html', username=username)
+
+@app.route("/customer/view_flights")
+def customer_view_flight():
+	username = session['username']
+	print(username)
+	cursor = conn.cursor()
+	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "incoming"'
+	cursor.execute(query, (username))
+	data = cursor.fetchall()
+	error = None
+	return render_template("customer_view_flights.html", username=username, data=data)
+
+@app.route("/customer/track_spending")
+def track_spending():
+	username = session['username']
+	cursor = conn.cursor()
+	query = 'SELECT SUM(price) FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s'
+	cursor.execute(query, (username))
+	data = cursor.fetchone()
+	error = None
+	return render_template("customer_track_spending.html", username=username, data=data)
+
+@app.route('/customer/purchase')
+def customer_purchase():
+	return render_template('customer_search_flights.html')
+
+@app.route('/customer/search_flight', methods=['POST'])
+def customer_search_flight():
+	rule = request.path
+	print("*"*10, rule)
+	departure_airport = request.form['departure_airport']
+	arrival_airport = request.form['arrival_airport']
+	print(departure_airport)
+
+	cursor = conn.cursor()
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
+	cursor.execute(query, (departure_airport, arrival_airport))
+	data = cursor.fetchall()
+	#print(data)
+	return render_template('customer_search_flights.html', data = data)
+
 #Define route for agent register
-@app.route('/register_agent')
+@app.route('/agent/register')
 def registerasagent():
 	 return render_template('register_agent.html')
  
@@ -201,7 +248,7 @@ def registerasagentAuth():
 		return render_template('index.html')
 
 #Define route for agent staff
-@app.route('/register_staff')
+@app.route('/staff/register')
 def registerasstaff():
 	return render_template('register_staff.html')
 

@@ -75,7 +75,7 @@ CREATE TABLE `customer` (
   `state` varchar(30) NOT NULL,
   `phone_number` int(11) NOT NULL,
   `passport_number` varchar(30) NOT NULL,
-  `passport_expiration` date NOT NULL,
+  `passport_expiration` date NOT NULL, 
   `passport_country` varchar(50) NOT NULL,
   `date_of_birth` date NOT NULL,
   PRIMARY KEY(`email`)
