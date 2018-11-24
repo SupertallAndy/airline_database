@@ -8,12 +8,14 @@ Created on Fri Nov  9 09:41:31 2018
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 from passlib.hash import md5_crypt
+from datetime import datetime
 
 #initialize the app
 app = Flask(__name__)
 
 #configure db
 #Configure MySQL
+ticket_id = 0
 conn = pymysql.connect(host='localhost',
                        user='root',
                        password='',
@@ -59,6 +61,7 @@ def login_customer():
 def login_as_customer_auth():
 	username = request.form['username']
 	password = request.form['password']
+	print(username)
 
 	cursor = conn.cursor()
 	query = 'SELECT * FROM customer WHERE email = %s'
@@ -70,7 +73,7 @@ def login_as_customer_auth():
 	if data:
 		if md5_crypt.verify(password, data['password']):
 			session['username'] = username
-			return redirect(url_for('customer/home'))
+			return redirect(url_for('home_customer'))
 		else:
 			error = 'Invalid password'
 			return render_template('login_customer.html', error = error)
@@ -87,21 +90,27 @@ def login_agent():
 def login_as_agent_auth():
 	username = request.form['username']
 	password = request.form['password']
+	print(username, password)
 	
 	cursor = conn.cursor()
-	query = 'SELECT * FROM booking_agent WHERE email = %s AND password = %s'
-	cursor.execute(query, (username, password))
+	query = 'SELECT * FROM booking_agent WHERE email = %s'
+	cursor.execute(query, (username))
 	data = cursor.fetchone()
 	error = None
 	if data:
 		if md5_crypt.verify(password, data['password']):
-			return redirect(url_for('agent_home'))
+			return redirect(url_for('home_agent'))
 		else:
 			error = 'Invalid password'
 			return render_template('login_agent.html', error = error)
 	else:
 		error = 'Invalid username'
 		return render_template('login_agent.html', error = error)
+
+@app.route("/agent")
+def home_agent():
+	username = session['username']
+	return render_template('home_agent.html', username=username)
 
 @app.route('/staff/login')
 def login_staff():
@@ -172,7 +181,7 @@ def registerascustomerAuth():
 		cursor.close()
 		return render_template('index.html')
 
-@app.route("/customer/home")
+@app.route("/customer")
 def home_customer():
 	username = session['username']
 	return render_template('home_customer.html', username=username)
@@ -202,10 +211,26 @@ def track_spending():
 def customer_purchase():
 	return render_template('customer_search_flights.html')
 
-@app.route('/customer/search_flight', methods=['POST'])
+@app.route('/customer/purchase/book')
+def customer_book_flight(item):
+	username = session['username']
+	now = datetime.now()
+	cursor = conn.cursor()
+	row = cursor.fetchone()
+	for i in item:
+		print(i)
+	# query = 'INSERT INTO ticket VALUE (%s'
+
+	# query = 'INSERT INTO purchases VALUE (%s, %s, NULL, %s)'
+	# global ticket_id
+	# print(type(ticket_id))
+	# cursor.execute(query, (str(ticket_id), username, str(now)))
+	# print(ticket_id)
+	# ticket_id += 1
+	return render_template('customer_search_flight.html')
+
+@app.route('/customer/purchase/search', methods=['POST'])
 def customer_search_flight():
-	rule = request.path
-	print("*"*10, rule)
 	departure_airport = request.form['departure_airport']
 	arrival_airport = request.form['arrival_airport']
 	print(departure_airport)
@@ -221,7 +246,7 @@ def customer_search_flight():
 @app.route('/agent/register')
 def registerasagent():
 	 return render_template('register_agent.html')
- 
+
 #Authenticates the agent register
 @app.route('/registerAgentAuth', methods=['GET', 'POST'])
 def registerasagentAuth():
@@ -231,20 +256,21 @@ def registerasagentAuth():
 	booking_agent_id = request.form['booking_agent_id']
 
 	cursor = conn.cursor()
-	query = 'SELECT * FROM user WHERE email = %s'
+	query = 'SELECT * FROM booking_agent WHERE email = %s'
 	cursor.execute(query, (email))
 	data = cursor.fetchone()
 	error = None
 	if(data):         
 		#If the previous query returns data, then user exists
 		error = "This email has already registered"
-		return render_template('register_agent.html', error = error)
+		return render_template('register_agent.html', rerror = error)
 	else:
 		encoded_password = md5_crypt.encrypt(password)
 		ins = 'INSERT INTO booking_agent VALUES(%s,%s,%s)'
 		cursor.execute(ins, (email, encoded_password, booking_agent_id ))
 		conn.commit()
 		cursor.close()
+		print("register success")
 		return render_template('index.html')
 
 #Define route for agent staff

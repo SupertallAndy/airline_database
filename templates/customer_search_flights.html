@@ -3,7 +3,7 @@
 </head>
 <body>
     <h1>Search Flight</h1>
-    <form action="/customer/search_flight" method="POST">
+    <form action="/customer/purchase/search" method="POST">
         <input type="text" name = "departure_airport" placeholder="departure airport" required/> </br>
         <input type="text" name = "arrival_airport" placeholder="arrival airport" required/></br>
         <input type="submit" value = Search />
@@ -35,10 +35,15 @@
                 <td>{{item.price}}</td>
                 <td>{{item.status}}</td>
                 <td>{{item.airplane_id}}</td>
+                <td> 
+                    <!-- <form action="/customer/purchase/book" method="GET"> -->
+                    <input type="button" value="Book" name="book" onclick="window.location='/customer/purchase/book/{{item}}';">
+                     <!-- </form> -->
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>    
-    <p><a href="/customer/home">Home</a></p>
+    <p><a href="/customer">Home</a></p>
 </body>
 </html>
