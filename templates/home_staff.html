@@ -1,0 +1,94 @@
+<html>
+
+<head>
+
+</head>
+
+<body>
+    <h3>Hello {{username}} {{airline_name}}</h3>
+
+	
+    {% if message %} 
+        <h4>{{message}}</h4>
+    {% endif %}
+
+	
+    {% if result %}
+        <table>
+            <th>Airline Name</th>
+            <th>Airplane#</th>
+            <th>Flight#</th>
+            <th>Departure Airport</th>
+            <th>Departure Time</th>
+            <th>Arrival Airport</th>
+            <th>Arrival Time</th>
+            <th>Ticket Price</th>
+            <th>Status</th>
+            <th>Check Passengers</th>
+            <th>Update Status</th>
+
+        
+            {% for flight in result %}
+                <tr>
+                    <td>{{flight.airline_name}}</td>
+                    <td>{{flight.airplane_id}}</td>
+                    <td>{{flight.flight_num}}</td>
+                    <td>{{flight.departure_airport}}</td>
+                    <td>{{flight.departure_time}}</td>
+                    <td>{{flight.arrival_airport}}</td>
+                    <td>{{flight.arrival_time}}</td>
+                    <td>{{flight.price}}</td>
+                    <td>{{flight.status}}</td>
+                    <td>
+                        <form action="" method="POST">
+                            <input type="hidden" name="airline_name" value="{{flight.airline_name}}" >
+                            <input type="hidden" name="flight_num"  value="{{flight.flight_num}}" >
+                            <input type="submit" value="display all passengers">
+                        </form>
+                    </td> 
+                    <td>
+                        <form action="" method="POST">
+                            <input type="hidden" name="airline_name" value="{{flight.airline_name}}">
+                            <input type="hidden" name="flight_num" value="{{flight.flight_num}}">
+                            <select name = "update_status">
+                                <option value="incoming">incoming</option>
+                                <option value="in-progress">in-progress</option>
+                                <option value="delayed">delayed</option>
+                            </select></br>
+                            <input type="submit" value="update status">
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    {% if passengers %}
+        <p>{{airline_name}} {{flight_num}} Passengers</p>
+        <table>
+            <th>name</th>
+            <th>email</th>
+            {% for passenger in passengers %}
+                <tr>
+                    <td>{{passenger.name}}</td>
+                    <td>{{passenger.email}}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    <a href="/create_flight">Create New Flight</a></br>
+    <a href="/add_airplane">Add New Airplane</a></br>
+    <a href="/add_airport">Add New Airport</a></br>
+    <a href="/report">View Report</a></br>
+    <a href="/top_destinations">View Top Destinations</a></br>
+    <a href="/show_revenue">Show Revenue</a></br>
+    <a href="/view_frequent_customers">View Frequent Customer</a></br>
+    <a href="/home_staff">Back</a></br>
+    <a href="/logout">Logout</a></br>
+
+    
+
+</body>
+
+</html>
