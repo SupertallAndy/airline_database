@@ -5,10 +5,11 @@ Created on Fri Nov  9 09:41:31 2018
 @author: qihen
 """
 
-from flask import Flask, render_template, request, session, url_for, redirect
+from flask import Flask, render_template, request, session, url_for, redirect, jsonify
 import pymysql.cursors
 from passlib.hash import md5_crypt
 from datetime import datetime
+import json
 
 #initialize the app
 app = Flask(__name__)
@@ -206,15 +207,29 @@ def customer_view_flight():
 def track_spending():
 	username = session['username']
 	cursor = conn.cursor()
-	query = 'SELECT SUM(price) FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s'
+	query = 'SELECT SUM(price) FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 YEAR)'
 	cursor.execute(query, (username))
-	data = cursor.fetchone()
-	print(data)
+	total = cursor.fetchone()
+	print(total)
 	error = None
-	# for chart
-	labels = ["January","February","March","April","May","June","July","August"]
-	values = [10,9,8,7,6,4,7,8]
-	return render_template("customer_track_spending.html", username=username, data=data, values=values, labels=labels)
+	# get data for chart
+	query = "SELECT YEAR(purchase_date) as year, MONTH(purchase_date) as month, sum(price) as expense FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND purchase_date > DATE_SUB(now(), INTERVAL 6 MONTH) GROUP BY YEAR(purchase_date), MONTH(purchase_date) DESC"
+	cursor.execute(query, (username))
+	data = cursor.fetchall()
+	now = datetime.now()
+	month = now.month
+	year = now.year
+
+	labels, values = get_labels(month, year, data)
+
+	print("*" * 10, labels)
+	print("*" * 10, values)
+	return render_template("customer_track_spending.html", **locals())
+
+@app.route("/customer/spending_barchart")
+def spending_barchart():
+
+	return render_template("customer_track_spending.html", **locals())
 
 @app.route('/customer/purchase')
 def customer_purchase():
@@ -477,5 +492,30 @@ def guest_home():
 	else:
 		return render_template('guest_home.html')
 
+def get_labels(month, year, data):
+	labels = []
+	values = []
+	item_found = 0
+	for i in range(6):
+		labels.append("%s-%s" % (str(year), str(month)))
+		for j in range(len(data)):
+			if data[j]['year'] == year and data[j]['month'] == month:
+				values.append(int(data[j]['expense']))
+				item_found = 1
+				break
+		if item_found == 0:
+			values.append(0)
+		month -= 1
+		if month == -1:
+			month = 12
+			year -= 1
+		item_found = 0
+
+	labels.reverse()
+	values.reverse()
+	return labels, values
+
 if __name__ == '__main__':
 	app.run('127.0.0.1', 5000, debug = True)
+
+

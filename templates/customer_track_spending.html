@@ -1,9 +1,51 @@
-<html>
-<head>
-</head>
+<!DOCTYPE html><html lang="en">
+    <head>   
+        <meta charset="utf-8" />
+        <!-- import plugin script -->   
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script> 
+    </head>
+
 <body>
     <h1>Track Your Spending {{username}}</h1>
-    <p>Total spending: {{data['SUM(price)']}}</p>
+    <h3>Total spending in the last year</h3>
+    <p>{{total['SUM(price)']}}</p>
+    <h3>Spending in the last 6 months</h3>
+    <canvas id="chart" width="600" height="400"></canvas>
+    <!-- {% for item in data %}
+    <p>{{item.price}}</p>
+    {% endfor %} -->
+    <script>
+        var barData = {
+            labels: [{% for item in labels %}
+                        "{{item}}",
+                        {% endfor %}],
+            datasets: [{
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                data : [{% for item in values %}
+                            {{item}},
+                            {% endfor %}]
+                }]
+            }
+        // TODO: set x, y axis labels
+        var mychart = document.getElementById("chart").getContext("2d");
+        steps = 10
+        max = 5000
+        // draw bar chart
+        new Chart(mychart).Bar(barData, {
+            scaleOverride: true,
+            scaleSteps: steps,
+            scaleStepWidth: Math.ceil(max / steps),
+            scaleStartValue: 0,
+            scaleShowVerticalLines: true,
+            scaleShowGridLines : true,
+            barShowStroke : true,
+            scaleShowLabels: true
+        });
+    </script>
+
+
     <p><a href="/customer">Home</a></p>
 </body>
 </html>
