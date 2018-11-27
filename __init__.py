@@ -15,13 +15,12 @@ app = Flask(__name__)
 
 #configure db
 #Configure MySQL
-ticket_id = 0
 conn = pymysql.connect(host='localhost',
                        user='root',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       #port=3307,
+                       port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -210,36 +209,50 @@ def track_spending():
 	query = 'SELECT SUM(price) FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s'
 	cursor.execute(query, (username))
 	data = cursor.fetchone()
+	print(data)
 	error = None
-	return render_template("customer_track_spending.html", username=username, data=data)
+	# for chart
+	labels = ["January","February","March","April","May","June","July","August"]
+	values = [10,9,8,7,6,4,7,8]
+	return render_template("customer_track_spending.html", username=username, data=data, values=values, labels=labels)
 
 @app.route('/customer/purchase')
 def customer_purchase():
 	return render_template('customer_search_flights.html')
 
-@app.route('/customer/purchase/book')
-def customer_book_flight(item):
-	username = session['username']
-	now = datetime.now()
+@app.route('/customer/purchase/book', methods=['POST'])
+def customer_book_flight():
+	# get ticket id
 	cursor = conn.cursor()
-	row = cursor.fetchone()
-	for i in item:
-		print(i)
-	# query = 'INSERT INTO ticket VALUE (%s'
+	query = 'SELECT COUNT(*) FROM ticket'
+	cursor.execute(query)
+	ticket_num = cursor.fetchone()['COUNT(*)']
+	print('*' * 10, ticket_num)
+	# print(ticket_num)
+	ticket_id = ticket_num + 1
 
-	# query = 'INSERT INTO purchases VALUE (%s, %s, NULL, %s)'
-	# global ticket_id
-	# print(type(ticket_id))
-	# cursor.execute(query, (str(ticket_id), username, str(now)))
-	# print(ticket_id)
-	# ticket_id += 1
-	return render_template('customer_search_flight.html')
+	username = session['username']
+	flight_num = request.form['flight_num']
+	airline = request.form['airline']
+	
+	query = 'INSERT INTO ticket VALUE(%s, %s, %s)'
+	cursor.execute(query, (str(ticket_id), airline, int(flight_num)))
+	conn.commit()
+
+	now = datetime.now()
+	query = 'INSERT INTO purchases VALUE (%s, %s, NULL, %s)'
+	cursor.execute(query, (str(ticket_id), username, str(now)))
+	conn.commit()
+	cursor.close()
+	ticket_id += 1
+	print(ticket_id)
+	return render_template('customer_after_booking.html')
 
 @app.route('/customer/purchase/search', methods=['POST'])
 def customer_search_flight():
 	departure_airport = request.form['departure_airport']
 	arrival_airport = request.form['arrival_airport']
-	print(departure_airport)
+	print(request.form)
 
 	cursor = conn.cursor()
 	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
@@ -418,7 +431,7 @@ def add_airport():
 	else:
 		return render_template('add_airport.html', airline_name=session['airline_name'])
 
-#todo: view booking agents
+#todo: view booking 
 
 @app.route('/view_frequent_customers', methods=['GET', 'POST'])
 def view_frequet_customers():
@@ -446,7 +459,8 @@ def show_trips():
 
 @app.route('/report', methods=['GET', 'POST'])
 def report():
-	
+	return
+
 #for the guest, you can directly search the flight
 @app.route('/guest_home', methods=['GET', 'POST'])
 def guest_home():

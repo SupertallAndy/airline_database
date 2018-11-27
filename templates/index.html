@@ -17,8 +17,10 @@
 	
 	<h3>Search for upcoming flights</h4>
 		<form action="/search_flight" method="POST">
-			<input type="text" name = "departure_airport" placeholder="departure airport" required/> </br>
-			<input type="text" name = "arrival_airport" placeholder="arrival airport" required/></br>
+			departure airport:<br>
+			<input type="text" name = "departure_airport" required/> </br>
+			arrival airport:<br>
+			<input type="text" name = "arrival_airport" required/></br>
 			<input type="submit" value = Search />
 			{% if error %}
 				<p class="error"><strong>Error:</strong> {{error}}</p>

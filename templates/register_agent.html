@@ -4,9 +4,12 @@
 <body>
 <h2>Register as a booking agent</h2>
 <form action="/registerAgentAuth" method="POST">
+	email:<br>
 	<input type="text" name = "email" placeholder="email" required/> </br>
-    <input type="password" name = "password" placeholder="password" required/></br>
-    <input type="text" name = "booking_agent_id" placeholder="booking agent id" required/></br>
+	password:<br>
+	<input type="password" name = "password" placeholder="password" required/></br>
+	booking agent id:<br>
+	<input type="text" name = "booking_agent_id" placeholder="booking agent id" required/></br>
 	<input type="submit" value = Register />
 	{% if error %}
 		<p class="error"><strong>Error:</strong> {{error}}</p>
