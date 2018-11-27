@@ -203,32 +203,37 @@ def customer_view_flight():
 	error = None
 	return render_template("customer_view_flights.html", username=username, data=data)
 
-@app.route("/customer/track_spending")
+@app.route("/customer/track_spending", methods=['GET', 'POST'])
 def track_spending():
 	username = session['username']
 	cursor = conn.cursor()
-	query = 'SELECT SUM(price) FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 YEAR)'
+	query = 'SELECT SUM(price) as expense FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 YEAR)'
 	cursor.execute(query, (username))
 	total = cursor.fetchone()
-	print(total)
 	error = None
 	# get data for chart
-	query = "SELECT YEAR(purchase_date) as year, MONTH(purchase_date) as month, sum(price) as expense FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND purchase_date > DATE_SUB(now(), INTERVAL 6 MONTH) GROUP BY YEAR(purchase_date), MONTH(purchase_date) DESC"
-	cursor.execute(query, (username))
-	data = cursor.fetchall()
-	now = datetime.now()
-	month = now.month
-	year = now.year
-
-	labels, values = get_labels(month, year, data)
-
-	print("*" * 10, labels)
-	print("*" * 10, values)
-	return render_template("customer_track_spending.html", **locals())
-
-@app.route("/customer/spending_barchart")
-def spending_barchart():
-
+	if request.form:
+		start_date = request.form['start_date']
+		end_date = request.form['end_date']
+		start_d_conv = datetime.strptime(start_date, "%Y-%m-%d")
+		end_d_conv = datetime.strptime(end_date, "%Y-%m-%d")
+		month_diff = diff_month(end_d_conv, start_d_conv)
+		print(start_date, end_date)
+		print(month_diff)
+		query = "SELECT YEAR(purchase_date) as year, MONTH(purchase_date) as month, sum(price) as expense FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND purchase_date BETWEEN %s AND %s GROUP BY YEAR(purchase_date), MONTH(purchase_date) DESC"
+		cursor.execute(query, (username, start_date, end_date))
+		data = cursor.fetchall()
+		month = end_d_conv.month
+		year = end_d_conv.year
+		labels, values = get_labels(month, year, data, month_diff)
+	else:
+		query = "SELECT YEAR(purchase_date) as year, MONTH(purchase_date) as month, sum(price) as expense FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND purchase_date > DATE_SUB(now(), INTERVAL 6 MONTH) GROUP BY YEAR(purchase_date), MONTH(purchase_date) DESC"
+		cursor.execute(query, (username))
+		data = cursor.fetchall()
+		now = datetime.now()
+		month = now.month
+		year = now.year
+		labels, values = get_labels(month, year, data)
 	return render_template("customer_track_spending.html", **locals())
 
 @app.route('/customer/purchase')
@@ -492,11 +497,15 @@ def guest_home():
 	else:
 		return render_template('guest_home.html')
 
-def get_labels(month, year, data):
+def diff_month(d1, d2):
+    return (d1.year - d2.year) * 12 + d1.month - d2.month + 1
+
+def get_labels(month, year, data, diff=6):
 	labels = []
 	values = []
 	item_found = 0
-	for i in range(6):
+	print(diff)
+	for i in range(diff):
 		labels.append("%s-%s" % (str(year), str(month)))
 		for j in range(len(data)):
 			if data[j]['year'] == year and data[j]['month'] == month:
@@ -513,6 +522,8 @@ def get_labels(month, year, data):
 
 	labels.reverse()
 	values.reverse()
+	print(labels)
+	print(values)
 	return labels, values
 
 if __name__ == '__main__':

@@ -8,8 +8,16 @@
 <body>
     <h1>Track Your Spending {{username}}</h1>
     <h3>Total spending in the last year</h3>
-    <p>{{total['SUM(price)']}}</p>
-    <h3>Spending in the last 6 months</h3>
+    <p>{{total['expense']}}</p>
+    <h3>Specify the time range</h3>
+    <form action="/customer/track_spending" method="POST">
+        Start date:<br>
+        <input type="date" name="start_date"></input><br>
+        End date:<br>
+        <input type="date" name="end_date"></input><br>
+        <input type='Submit' value=Submit></input><br>
+    </form>
+    <br>
     <canvas id="chart" width="600" height="400"></canvas>
     <!-- {% for item in data %}
     <p>{{item.price}}</p>
