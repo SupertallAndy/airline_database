@@ -1,0 +1,54 @@
+<html>
+<head>
+</head>
+<body>
+    <h1>Search Flight</h1>
+    <form action="/agent/purchase/search" method="POST">
+        departure airport:<br>
+        <input type="text" name = "departure_airport" required/> </br>
+        arrival airport:<br>
+        <input type="text" name = "arrival_airport" required/></br>
+        <input type="submit" value = Search />
+        {% if error %}
+            <p class="error"><strong>Error:</strong> {{error}}</p>
+        {% endif %}
+    </form>
+    <table>
+        <tbody>
+            {% for item in data %}
+            <tr>
+                <td>airline</td>
+                <td>flight number</td>
+                <td>depature airport</td>
+                <td>departure time</td>
+                <td>arrival airport</td>
+                <td>arrival time</td>
+                <td>price</td>
+                <td>status</td>
+                <td>airplane id</td>
+            </tr>
+            <tr>
+                <form action='/agent/purchase/book', method='POST'>
+                    <td><input type='text' name='airline' value="{{item.airline_name}}" readonly='readonly'></td>
+                    <td><input type='text' name='flight_num' value="{{item.flight_num}}" readonly='readonly'></td>
+                    <td>{{item.departure_airport}}</td>
+                    <td>{{item.departure_time}}</td>
+                    <td>{{item.arrival_airport}}</td>
+                    <td>{{item.arrival_time}}</td>
+                    <td>{{item.price}}</td>
+                    <td>{{item.status}}</td>
+                    <td>{{item.airplane_id}}</td>
+                    <td><input type='text' name='customer_email' placeholder="customer email"></td>
+                    <td><input type='submit' value=Book name='book'></td>
+                    {% if error %}
+                        <p class="error"><strong>Error:</strong> {{error}}</p>
+                    {% endif %}
+                </form>
+                
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>    
+    <p><a href="/agent">Home</a></p>
+</body>
+</html>

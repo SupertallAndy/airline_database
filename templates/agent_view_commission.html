@@ -1,0 +1,23 @@
+<html>
+<head>
+</head>
+<body>
+    <h1>View Your Commision {{username}}</h1>
+    <p>Total number of tickets purhcased in the past 30 days: {{data['num_tickets']}}</p>
+    <p>Your total commision in the past 30 days: {{data['commission']}}</p>
+    <h3>Specify time range</h3>
+    <form action='/agent/view_commission' method="POST">
+        Start date:<br>
+        <input type="date" name="start_date"><br>
+        End date:<br>
+        <input type="date" name="end_date"><br>
+        <input type='Submit' value=Submit><br>
+    </form>
+    {% if data_range %}
+        <p>Your total commission during this time period: {{data_range['commission']}}</p> 
+        <p>Your total commission during this time period: {{data_range['commission']}}</p> 
+    {% endif %}
+    
+    <p><a href='/agent'>Home</a></p>
+</body>
+</html>
