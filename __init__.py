@@ -21,7 +21,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       port=3307,
+                       #port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -347,6 +347,22 @@ def registerasstaffAuth():
 def home_staff():
 	#if the button has been triggered
 	if request.method == 'POST':
+		if "start_date" in request.form:
+			start_date = request.form['start_date']
+			end_date = request.form['end_date'] if 'end_date' in request.form else 'NOW()'
+			departure_airport = '= ' + request.form['departure_airport'] if 'departure_airport' in request.form else 'IS NOT NULL'
+			arrival_airport = '= ' + request.form['arrival_airport'] if 'arrival_airport' in request.form else 'IS NOT NULL'
+			departure_city = '= ' + request.form['departure_city'] if 'departure_city' in request.form else 'IS NOT NULL'
+			arrival_city = '= ' + request.form['arrival_city'] if 'arrival_city' in request.form else 'IS NOT NULL'
+			cursor = conn.cursor()
+			query = ('SELECT * FROM flight JOIN airport T JOIN airport S where departure_airport = T.airport_name AND arrival_airport = S.airport_name '
+					'WHERE departure_time >= %s AND arrival_time <= %s AND departure_airport %s AND arrival_airport %s AND '
+					'departure_city %s AND arrival_city %s')
+			cursor.execute(query, (start_date, end_date, departure_airport, arrival_airport, departure_city, arrival_city))
+			data = cursor.fetchall()
+			cursor.close()
+			return render_template('staff_home.html', username=session['username'], result=data, airline_name=airline_name)
+			
 		#if we try to update the status
 		if 'update_status' in request.form:
 			airline_name = request.form['airline_name']
@@ -451,10 +467,34 @@ def add_airport():
 	else:
 		return render_template('add_airport.html', airline_name=session['airline_name'])
 
-#todo: view booking 
-
+@app.route('/view_booking_agents', methods=['GET', 'POST'])
+def view_booking_agents():
+	#Top 5 booking agents based on number of tickets sales for the past month and past year. 
+	#Top 5 booking agents based on the amount of commission received for the last year.
+	cursor = conn.cursor()
+	query1month = ('SELECT booking_agent_id, COUNT(*) as ticket_sold FROM booking_agent NATURAL JOIN purchases NATURAL JOIN ticket WHERE '
+					'airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 MONTH '
+					'GROUP BY booking_agent_id ORDER BY ticket_sold DESC LIMIT 5')
+	cursor.execute(query1month, session['airline_name'])
+	data1month = cursor.fetchall()
+	
+	query1year = ('SELECT booking_agent_id, COUNT(*) as ticket_sold FROM booking_agent NATURAL JOIN purchases NATURAL JOIN ticket WHERE '
+					'airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 YEAR '
+					'GROUP BY booking_agent_id ORDER BY ticket_sold DESC LIMIT 5')
+	cursor.execute(query1year, session['airline_name'])
+	data1year = cursor.fetchall()
+	
+	query1month_com = ('SELECT booking_agent_id, SUM(price) as total_commission FROM booking_agent NATURAL JOIN purchases NATURAL JOIN ticket NATURAL JOIN flight '
+						'WHERE airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 YEAR '
+						'GROUP BY booking_agent_id ORDER BY total_commission LIMIT 5')
+	cursor.execute(query1month_com, session['airline_name'])
+	data1month_com = cursor.fetchall()
+	
+	cursor.close()	
+	return render_template('view_booking_agents.html', airline_name=session['airline_name'], result1month=data1month, result1year=data1year, result1month_com=data1month_com)
+	
 @app.route('/view_frequent_customers', methods=['GET', 'POST'])
-def view_frequet_customers():
+def view_frequent_customers():
 	if request.method == 'POST':
 		email = request.form['customer_email']
 		return redirect(url_for('show_trips', airline_name=session['airline_name'], customer_email=email))
@@ -477,9 +517,82 @@ def show_trips():
 	data = cursor.fetchall()
 	return render_template('show_trips.html', airline_name=airline_name, result=data, customer_email=customer_email)
 
+#todo: visualize the report
 @app.route('/report', methods=['GET', 'POST'])
 def report():
-	return
+	if request.method == 'POST':
+		airline_name = session['airline_name']
+		if 'start_date' in request.form:
+			start_date = request.form['start_date']
+			end_date = request.form['end_date'] if 'end_date' in request.form else 'NOW()'
+			cursor = conn.cursor()
+			query = 'SELECT * FROM ticket NATURAL JOIN purchases WHERE airline_name = %s AND purchase_date >= %s AND purchase_date <= %s'
+			cursor.execute(query, (airline_name, start_date, end_date))
+			Num_ticket = len(cursor.fetchall())
+			cursor.close()
+			msg = "From %s to %s the number of sold tickets is: " %(start_date, end_date)
+			return render_template('report.html', airline_name = airline_name, result = Num_ticket, message = msg)
+		elif request.form['interval'] == 'MONTH':
+			cursor = conn.cursor()
+			query = 'SELECT * FROM ticket NATURAL JOIN purchases WHERE airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 MONTH'
+			cursor.execute(query, (airline_name))
+			Num_ticket = len(cursor.fetchall())
+			cursor.close()
+			msg = 'the number of sold tickets in the last month is: '
+			return render_template('report.html', airline_name= airline_name, result=Num_ticket, message=msg)
+		elif request.form['interval'] == 'YEAR':
+			cursor = conn.cursor()
+			count = []
+			numOfYears = int(request.form['period'])
+			for i in range(12*numOfYears, 0, -1):
+				query = 'SELECT * FROM ticket NATURAL JOIN purchases WHERE airline_name = %s AND purchase_date < NOW() - INTERVAL %s MONTH and purchase_date >= NOW() - INTERVAL %s MONTH'
+				cursor.execute(query, (session['airline_name'], i-1, i))
+				count.append(len(cursor.fetchall()))
+			cursor.close()
+			totSellNum = sum(count)
+			msg = 'Number of tickets sold for last %s year: ' % numOfYears
+			return render_template('report.html', airline_name=session['airline_name'], sellStats=count, totSellNum=totSellNum, message=msg)
+	else:
+		airline_name = session['airline_name']
+		return render_template('report.html', airline_name= airline_name)
+
+#todo: visualize the revenue
+@app.route('/show_revenue')
+def revenue():
+	airline_name = session['airline_name']
+	cursor = conn.cursor()
+	query_direct = 'SELECT SUM(price) AS direct_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND booking_agent_id IS NULL'
+	cursor.execute(query_direct, airline_name)
+	data_direct = cursor.fetchone()
+	
+	query_indirect = 'SELECT SUM(price) AS indirect_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND booking_agent_id IS NOT NULL'
+	cursor.execute(query_indirect, airline_name)
+	data_indirect = cursor.fetchone()
+	cursor.close()
+	
+	data = [ data_direct['direct_revenue'] if data_direct['direct_revenue'] else 0, data_indirect['indirect_revenue'] if data_indirect['indirect_revenue'] else 0]
+	return render_template('revenue.html', airline_name = airline_name, result = data)
+
+@app.route('/top_destinations')
+def top_destinations():
+	#Find the top 3 most popular destinations for last 3 months and last year
+	cursor = conn.cursor()
+	query3month =  ('SELECT airport_city, COUNT(*) AS ticket_sold '
+					'FROM (SELECT airport_city, arrival_airport '
+						'FROM purchases NATURAL JOIN ticket NATURAL JOIN flight, airport '
+						'WHERE airline_name = %s AND departure_time >= NOW() - INTERVAL 3 MONTH AND arrival_airport = airport_name) as T '
+					'GROUP BY airport_city ORDER BY ticket_sold DESC LIMIT 3')
+	cursor.execute(query3month, session['airline_name'])
+	data3month = cursor.fetchall()
+	query1year =   ('SELECT airport_city, COUNT(*) AS ticket_sold '
+					'FROM (SELECT airport_city, arrival_airport '
+						'FROM purchases NATURAL JOIN ticket NATURAL JOIN flight, airport '
+						'WHERE airline_name = %s AND departure_time >= NOW() - INTERVAL 1 YEAR AND arrival_airport = airport_name) as T '
+					'GROUP BY airport_city ORDER BY ticket_sold DESC LIMIT 3')
+	cursor.execute(query1year, session['airline_name'])
+	data1year = cursor.fetchall()
+	cursor.close()
+	return render_template('top_destinations.html', airline_name=session['airline_name'], result3month=data3month, result1year=data1year)
 
 #for the guest, you can directly search the flight
 @app.route('/guest_home', methods=['GET', 'POST'])
