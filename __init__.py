@@ -21,7 +21,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       #port=3307,
+                       port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -406,6 +406,44 @@ def agent_view_commission():
 		print(data_range)
 
 	return render_template('agent_view_commission.html', **locals())
+
+@app.route("/agent/top_customers", methods=['POST', 'GET'])
+def agent_top_customers():
+	cursor = conn.cursor()
+	username = session["username"]
+	query = 'SELECT booking_agent_id FROM booking_agent WHERE email LIKE %s'
+	cursor.execute(query, (username))
+	data = cursor.fetchone()
+	id = data['booking_agent_id']
+	print(id)
+
+	query = 'SELECT customer_email, COUNT(*) AS num FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH) GROUP BY customer_email ORDER BY num DESC LIMIT 5'
+	cursor.execute(query, id)
+	data = cursor.fetchall()
+	print("*" * 10)
+	print(data)
+	labels1 = []
+	values1 = []
+	for d in data:
+		labels1.append(d['customer_email'])
+		values1.append(int(d['num']))
+	print(labels1)
+
+	query = 'SELECT customer_email, SUM(price) * 0.1 AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH) GROUP BY customer_email ORDER BY commission DESC LIMIT 5'
+	cursor.execute(query, id)
+	data = cursor.fetchall()
+	print("*" * 10)
+	print(data)
+	labels2 = []
+	values2 = []
+	for d in data:
+		labels2.append(d['customer_email'])
+		values2.append(int(d['commission']))
+	print(values2)
+	
+	return render_template('agent_view_top_customers.html', **locals())
+
+
 
 #Define route for agent staff
 @app.route('/staff/register')
