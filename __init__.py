@@ -21,7 +21,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       #port=3307,
+                       port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -104,6 +104,7 @@ def login_as_agent_auth():
 	error = None
 	if data:
 		if md5_crypt.verify(password, data['password']):
+			session['username'] = username
 			return redirect(url_for('home_agent'))
 		else:
 			error = 'Invalid password'
@@ -169,7 +170,11 @@ def registerascustomerAuth():
 	passport_country = request.form['passport_country']
 	date_of_birth = request.form['date_of_birth']
     
-	print("***************" + email + "*************** ")
+	if phone_number.isdigit() == False:
+		error = 'Phone number needs to be number'
+		return render_template('register_customer.html', error = error)
+
+	# print("***************" + email + "*************** ")
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
@@ -201,6 +206,9 @@ def home_customer():
 def customer_view_flight():
 	username = session['username']
 	print(username)
+	if authenticate(username, 'customer') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	cursor = conn.cursor()
 	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "incoming"'
 	cursor.execute(query, (username))
@@ -212,6 +220,9 @@ def customer_view_flight():
 @app.route("/customer/track_spending", methods=['GET', 'POST'])
 def track_spending():
 	username = session['username']
+	if authenticate(username, 'customer') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	cursor = conn.cursor()
 	query = 'SELECT SUM(price) as expense FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 YEAR)'
 	cursor.execute(query, (username))
@@ -245,11 +256,19 @@ def track_spending():
 
 @app.route('/customer/purchase')
 def customer_purchase():
+	username = session['username']
+	if authenticate(username, 'customer') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	return render_template('customer_search_flights.html')
 
 @app.route('/customer/purchase/book', methods=['POST'])
 def customer_book_flight():
 	# get ticket id
+	username = session['username']
+	if authenticate(username, 'customer') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	cursor = conn.cursor()
 	query = 'SELECT COUNT(*) FROM ticket'
 	cursor.execute(query)
@@ -277,6 +296,10 @@ def customer_book_flight():
 
 @app.route('/customer/purchase/search', methods=['POST'])
 def customer_search_flight():
+	username = session['username']
+	if authenticate(username, 'customer') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	departure_airport = request.form['departure_airport']
 	arrival_airport = request.form['arrival_airport']
 	print(request.form)
@@ -300,7 +323,11 @@ def registerasagentAuth():
 	#grabs information from the forms
 	email = request.form['email']
 	password = request.form['password']
+	
 	booking_agent_id = request.form['booking_agent_id']
+	if booking_agent_id.isdigit() == False:
+		error = 'ID needs to be numbers'
+		return render_template('register_agent.html',error=error)
 
 	cursor = conn.cursor()
 	query = 'SELECT * FROM booking_agent WHERE email = %s'
@@ -311,7 +338,7 @@ def registerasagentAuth():
 		cursor.close()
 		#If the previous query returns data, then user exists
 		error = "This email has already registered"
-		return render_template('register_agent.html', rerror = error)
+		return render_template('register_agent.html', error = error)
 	else:
 		encoded_password = md5_crypt.encrypt(password)
 		ins = 'INSERT INTO booking_agent VALUES(%s,%s,%s)'
@@ -320,6 +347,155 @@ def registerasagentAuth():
 		cursor.close()
 		print("register success")
 		return render_template('index.html')
+
+@app.route("/agent/view_flights")
+def agent_view_flight():
+	username = session['username']
+	print(username)
+	if authenticate(username, 'agent') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
+	cursor = conn.cursor()
+	# get booking agent id
+	query = 'SELECT booking_agent_id FROM booking_agent WHERE email LIKE %s'
+	cursor.execute(query, (username))
+	data = cursor.fetchone()
+	id = data['booking_agent_id']
+	print("*"*10, id)
+	
+	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "incoming"'
+	cursor.execute(query, (id))
+	data = cursor.fetchall()
+	print(data)
+	error = None
+	return render_template("agent_view_flights.html", username=username, data=data)
+
+@app.route('/agent/purchase')
+def agent_purchase():
+	username = session['username']
+	if authenticate(username, 'agent') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
+	return render_template('agent_search_flights.html')
+
+@app.route('/agent/purchase/search', methods=['POST'])
+def agent_search_flight():
+	username = session['username']
+	if authenticate(username, 'agent') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
+	departure_airport = request.form['departure_airport']
+	arrival_airport = request.form['arrival_airport']
+	print(request.form)
+
+	cursor = conn.cursor()
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
+	cursor.execute(query, (departure_airport, arrival_airport))
+	data = cursor.fetchall()
+	#print(data)
+	return render_template('agent_search_flights.html', data = data)
+
+@app.route('/agent/purchase/book', methods=['POST'])
+def agent_book_flight():
+	# get ticket id
+	username = session['username']
+	if authenticate(username, 'agent') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
+	cursor = conn.cursor()
+	query = 'SELECT COUNT(*) FROM ticket'
+	cursor.execute(query)
+	ticket_num = cursor.fetchone()['COUNT(*)']
+	print('*' * 10, ticket_num)
+	# print(ticket_num)
+	ticket_id = ticket_num + 1
+
+	# get agent id
+	username = session["username"]
+	query = 'SELECT booking_agent_id FROM booking_agent WHERE email LIKE %s'
+	cursor.execute(query, (username))
+	data = cursor.fetchone()
+	id = data['booking_agent_id']
+	flight_num = request.form['flight_num']
+	airline = request.form['airline']
+	customer_email = request.form['customer_email']
+	
+	query = 'INSERT INTO ticket VALUE(%s, %s, %s)'
+	cursor.execute(query, (str(ticket_id), airline, int(flight_num)))
+	conn.commit()
+
+	now = datetime.now()
+	query = 'INSERT INTO purchases VALUE (%s, %s, %s, %s)'
+	cursor.execute(query, (str(ticket_id), customer_email, id, str(now)))
+	conn.commit()
+	cursor.close()
+	ticket_id += 1
+	return render_template('customer_after_booking.html')
+
+@app.route('/agent/view_commission', methods=["GET", "POST"])
+def agent_view_commission():
+	cursor = conn.cursor()
+	username = session["username"]
+	if authenticate(username, 'agent') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
+	query = 'SELECT booking_agent_id FROM booking_agent WHERE email LIKE %s'
+	cursor.execute(query, (username))
+	data = cursor.fetchone()
+	id = data['booking_agent_id']
+	print(id)
+	query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "incoming" AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH)'
+	cursor.execute(query, id)
+	data = cursor.fetchone()
+	data_range = 0
+
+	if request.form:
+		start_date = request.form['start_date']
+		end_date = request.form['end_date']
+		query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "incoming" AND purchase_date BETWEEN %s and %s'
+		cursor.execute(query, (id, start_date, end_date))
+		data_range = cursor.fetchone()
+		print(data_range)
+
+	return render_template('agent_view_commission.html', **locals())
+
+@app.route("/agent/top_customers", methods=['POST', 'GET'])
+def agent_top_customers():
+	cursor = conn.cursor()
+	username = session["username"]
+	query = 'SELECT booking_agent_id FROM booking_agent WHERE email LIKE %s'
+	cursor.execute(query, (username))
+	data = cursor.fetchone()
+	id = data['booking_agent_id']
+	print(id)
+
+	query = 'SELECT customer_email, COUNT(*) AS num FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH) GROUP BY customer_email ORDER BY num DESC LIMIT 5'
+	cursor.execute(query, id)
+	data = cursor.fetchall()
+	print("*" * 10)
+	print(data)
+	labels1 = []
+	values1 = []
+	for d in data:
+		labels1.append(d['customer_email'])
+		values1.append(int(d['num']))
+	print(labels1)
+
+	query = 'SELECT customer_email, SUM(price) * 0.1 AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH) GROUP BY customer_email ORDER BY commission DESC LIMIT 5'
+	cursor.execute(query, id)
+	data = cursor.fetchall()
+	print("*" * 10)
+	print(data)
+	labels2 = []
+	values2 = []
+	for d in data:
+		labels2.append(d['customer_email'])
+		values2.append(int(d['commission']))
+	print(values2)
+	
+	return render_template('agent_view_top_customers.html', **locals())
+
+
 
 #Define route for agent staff
 @app.route('/staff/register')
@@ -360,17 +536,18 @@ def home_staff():
 		if "start_date" in request.form:
 			start_date = request.form['start_date']
 			end_date = request.form['end_date'] if 'end_date' in request.form else 'NOW()'
-			departure_airport = request.form['departure_airport']
-			arrival_airport = request.form['arrival_airport']
-			#departure_city = '= ' + request.form['departure_city'] if 'departure_city' in request.form else 'IS NOT NULL'
-			#arrival_city = '= ' + request.form['arrival_city'] if 'arrival_city' in request.form else 'IS NOT NULL'
+			departure_airport = '= ' + request.form['departure_airport'] if 'departure_airport' in request.form else 'IS NOT NULL'
+			arrival_airport = '= ' + request.form['arrival_airport'] if 'arrival_airport' in request.form else 'IS NOT NULL'
+			departure_city = '= ' + request.form['departure_city'] if 'departure_city' in request.form else 'IS NOT NULL'
+			arrival_city = '= ' + request.form['arrival_city'] if 'arrival_city' in request.form else 'IS NOT NULL'
 			cursor = conn.cursor()
 			query = ('SELECT * FROM flight JOIN airport T JOIN airport S where departure_airport = T.airport_name AND arrival_airport = S.airport_name '
-					'AND departure_time >= %s AND arrival_time <= %s AND departure_airport = %s AND arrival_airport = %s ')
-			cursor.execute(query, (start_date, end_date, departure_airport, arrival_airport))
+					'WHERE departure_time >= %s AND arrival_time <= %s AND departure_airport %s AND arrival_airport %s AND '
+					'departure_city %s AND arrival_city %s')
+			cursor.execute(query, (start_date, end_date, departure_airport, arrival_airport, departure_city, arrival_city))
 			data = cursor.fetchall()
 			cursor.close()
-			return render_template('home_staff.html', username=session['username'], result=data, airline_name=session['airline_name'])
+			return render_template('staff_home.html', username=session['username'], result=data, airline_name=airline_name)
 			
 		#if we try to update the status
 		elif 'update_status' in request.form:
@@ -386,7 +563,7 @@ def home_staff():
 			cursor.execute(query, airline_name)
 			data = cursor.fetchall()
 			cursor.close()
-			return render_template('home_staff.html', username=session['username'], result=data, airline_name=airline_name, message=msg)
+			return render_template('staff_home.html', username=session['username'], result=data, airline_name=airline_name, message=msg)
 		#if instead we would like to view the passengers
 		else:		
 			airline_name = request.form['airline_name']
@@ -409,6 +586,10 @@ def home_staff():
 
 @app.route('/create_flight', methods=['GET', 'POST'])
 def create_flight():
+	username = session["username"]
+	if authenticate(username, 'staff') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	if request.method == 'POST':
 		airline_name = request.form['airline_name']
 		flight_num = request.form['flight_num']
@@ -434,6 +615,10 @@ def create_flight():
 
 @app.route('/add_airplane', methods=['GET', 'POST'])
 def add_airplane():
+	username = session["username"]
+	if authenticate(username, 'staff') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	if request.method == 'GET':
 		cursor = conn.cursor()
 		query = 'SELECT * FROM airplane WHERE airline_name = %s'
@@ -458,6 +643,10 @@ def add_airplane():
 
 @app.route('/add_airport', methods=['GET', 'POST'])
 def add_airport():
+	username = session["username"]
+	if authenticate(username, 'staff') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	if request.method == 'POST':
 		airline_name = request.form['airline_name']
 		airport_name = request.form['airport_name']
@@ -480,6 +669,10 @@ def add_airport():
 def view_booking_agents():
 	#Top 5 booking agents based on number of tickets sales for the past month and past year. 
 	#Top 5 booking agents based on the amount of commission received for the last year.
+	username = session["username"]
+	if authenticate(username, 'staff') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	cursor = conn.cursor()
 	query1month = ('SELECT booking_agent_id, COUNT(*) as ticket_sold FROM booking_agent NATURAL JOIN purchases NATURAL JOIN ticket WHERE '
 					'airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 MONTH '
@@ -504,6 +697,10 @@ def view_booking_agents():
 	
 @app.route('/view_frequent_customers', methods=['GET', 'POST'])
 def view_frequent_customers():
+	username = session["username"]
+	if authenticate(username, 'staff') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	if request.method == 'POST':
 		email = request.form['customer_email']
 		return redirect(url_for('show_trips', airline_name=session['airline_name'], customer_email=email))
@@ -570,6 +767,10 @@ def report():
 #todo: visualize the revenue
 @app.route('/show_revenue')
 def revenue():
+	username = session["username"]
+	if authenticate(username, 'staff') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
 	airline_name = session['airline_name']
 	cursor = conn.cursor()
 	query_direct = 'SELECT SUM(price) AS direct_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND booking_agent_id IS NULL'
@@ -650,6 +851,25 @@ def get_labels(month, year, data, diff=6):
 	print(labels)
 	print(values)
 	return labels, values
+
+def authenticate(username, usertype):
+	print(username, usertype)
+	print(type(username), type(usertype))
+	cursor = conn.cursor()
+	if usertype == 'customer':
+		query = 'SELECT * FROM customer WHERE email LIKE %s'
+	elif usertype == 'agent':
+		query = 'SELECT * FROM booking_agent WHERE email LIKE %s'
+	elif usertype == 'staff':
+		query = 'SELECT * FROM airline_staff WHERE username LIKE %s'
+	cursor.execute(query, username)
+	data = cursor.fetchone()
+	if data:
+		return "success"
+	else:
+		return "failed"
+	
+	
 
 if __name__ == '__main__':
 	app.run('127.0.0.1', 5000, debug = True)
