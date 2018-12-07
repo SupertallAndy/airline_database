@@ -430,7 +430,7 @@ def agent_book_flight():
 	conn.commit()
 	cursor.close()
 	ticket_id += 1
-	return render_template('customer_after_booking.html')
+	return render_template('agent_after_booking.html')
 
 @app.route('/agent/view_commission', methods=["GET", "POST"])
 def agent_view_commission():
