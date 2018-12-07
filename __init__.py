@@ -166,7 +166,11 @@ def registerascustomerAuth():
 	passport_country = request.form['passport_country']
 	date_of_birth = request.form['date_of_birth']
     
-	print("***************" + email + "*************** ")
+	if phone_number.isdigit() == False:
+		error = 'Phone number needs to be number'
+		return render_template('register_customer.html', error = error)
+
+	# print("***************" + email + "*************** ")
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
@@ -313,6 +317,9 @@ def registerasagentAuth():
 	password = request.form['password']
 	
 	booking_agent_id = request.form['booking_agent_id']
+	if booking_agent_id.isdigit() == False:
+		error = 'ID needs to be numbers'
+		return render_template('register_agent.html',error=error)
 
 	cursor = conn.cursor()
 	query = 'SELECT * FROM booking_agent WHERE email = %s'
@@ -322,7 +329,7 @@ def registerasagentAuth():
 	if(data):         
 		#If the previous query returns data, then user exists
 		error = "This email has already registered"
-		return render_template('register_agent.html', rerror = error)
+		return render_template('register_agent.html', error = error)
 	else:
 		encoded_password = md5_crypt.encrypt(password)
 		ins = 'INSERT INTO booking_agent VALUES(%s,%s,%s)'
