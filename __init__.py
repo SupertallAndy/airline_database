@@ -44,6 +44,7 @@ def search_flight():
 	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
 	cursor.execute(query, (departure_airport, arrival_airport))
 	data = cursor.fetchall()
+	cursor.close()
 	#print(data)
 	return render_template('index.html', data = data)
 
@@ -68,6 +69,7 @@ def login_as_customer_auth():
 	
 	cursor.execute(query, (username))
 	data = cursor.fetchone()
+	cursor.close()
 
 	error = None
 	if data:
@@ -98,6 +100,7 @@ def login_as_agent_auth():
 	query = 'SELECT * FROM booking_agent WHERE email = %s'
 	cursor.execute(query, (username))
 	data = cursor.fetchone()
+	cursor.close()
 	error = None
 	if data:
 		if md5_crypt.verify(password, data['password']):
@@ -130,6 +133,7 @@ def login_as_staff_auth():
 	query = 'SELECT * FROM airline_staff WHERE username = %s'
 	cursor.execute(query, (username))
 	data = cursor.fetchone()
+	cursor.close()
 	error = None
 	if data:
 		if md5_crypt.verify(password, data['password']):
@@ -177,6 +181,7 @@ def registerascustomerAuth():
 	error = None
 	if(data):
 		#If the previous query returns data, then user exists
+		cursor.close()
 		error = "This email has already registered"
 		return render_template('register_customer.html', error = error)
 	else:
@@ -200,6 +205,7 @@ def customer_view_flight():
 	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "incoming"'
 	cursor.execute(query, (username))
 	data = cursor.fetchall()
+	cursor.close()
 	error = None
 	return render_template("customer_view_flights.html", username=username, data=data)
 
@@ -234,6 +240,7 @@ def track_spending():
 		month = now.month
 		year = now.year
 		labels, values = get_labels(month, year, data)
+	cursor.close()
 	return render_template("customer_track_spending.html", **locals())
 
 @app.route('/customer/purchase')
@@ -278,6 +285,7 @@ def customer_search_flight():
 	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
 	cursor.execute(query, (departure_airport, arrival_airport))
 	data = cursor.fetchall()
+	cursor.close()
 	#print(data)
 	return render_template('customer_search_flights.html', data = data)
 
@@ -300,6 +308,7 @@ def registerasagentAuth():
 	data = cursor.fetchone()
 	error = None
 	if(data):         
+		cursor.close()
 		#If the previous query returns data, then user exists
 		error = "This email has already registered"
 		return render_template('register_agent.html', rerror = error)
@@ -331,7 +340,8 @@ def registerasstaffAuth():
 	cursor.execute(query, (username))
 	data = cursor.fetchone()
 	error = None
-	if(data):         
+	if(data):      
+		cursor.close()	
 		#If the previous query returns data, then user exists
 		error = "This username has already registered"
 		return render_template('register_staff.html', error = error)
@@ -363,7 +373,7 @@ def home_staff():
 			return render_template('home_staff.html', username=session['username'], result=data, airline_name=session['airline_name'])
 			
 		#if we try to update the status
-		if 'update_status' in request.form:
+		elif 'update_status' in request.form:
 			airline_name = request.form['airline_name']
 			flight_num = request.form['flight_num']
 			cursor = conn.cursor()
@@ -504,6 +514,7 @@ def view_frequent_customers():
 		cursor = conn.cursor()
 		cursor.execute(query, session['airline_name'])
 		data = cursor.fetchall()
+		cursor.close()
 		return render_template('view_frequent_customers.html', airline_name=session['airline_name'], result=data)
 
 @app.route('/show_trips')
@@ -514,6 +525,7 @@ def show_trips():
 	cursor = conn.cursor()
 	cursor.execute(query, (airline_name, customer_email))
 	data = cursor.fetchall()
+	cursor.close()
 	return render_template('show_trips.html', airline_name=airline_name, result=data, customer_email=customer_email)
 
 #todo: visualize the report
@@ -603,6 +615,7 @@ def guest_home():
 			cursor = conn.cursor()
 			cursor.execute(query, args)
 			data = cursor.fetchall()
+			cursor.close()
 			return render_template('guest_home.html', result=data)
 		else:
 			return render_template('guest_home.html', error="Please enter departure city/airport, arrival city/airport and travel date")
