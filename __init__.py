@@ -21,7 +21,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       port=3307,
+                       #port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -536,18 +536,17 @@ def home_staff():
 		if "start_date" in request.form:
 			start_date = request.form['start_date']
 			end_date = request.form['end_date'] if 'end_date' in request.form else 'NOW()'
-			departure_airport = '= ' + request.form['departure_airport'] if 'departure_airport' in request.form else 'IS NOT NULL'
-			arrival_airport = '= ' + request.form['arrival_airport'] if 'arrival_airport' in request.form else 'IS NOT NULL'
-			departure_city = '= ' + request.form['departure_city'] if 'departure_city' in request.form else 'IS NOT NULL'
-			arrival_city = '= ' + request.form['arrival_city'] if 'arrival_city' in request.form else 'IS NOT NULL'
+			departure_airport = request.form['departure_airport'] 
+			arrival_airport = request.form['arrival_airport'] 
+			#departure_city = '= ' + request.form['departure_city'] if 'departure_city' in request.form else 'IS NOT NULL'
+			#arrival_city = '= ' + request.form['arrival_city'] if 'arrival_city' in request.form else 'IS NOT NULL'
 			cursor = conn.cursor()
 			query = ('SELECT * FROM flight JOIN airport T JOIN airport S where departure_airport = T.airport_name AND arrival_airport = S.airport_name '
-					'WHERE departure_time >= %s AND arrival_time <= %s AND departure_airport %s AND arrival_airport %s AND '
-					'departure_city %s AND arrival_city %s')
-			cursor.execute(query, (start_date, end_date, departure_airport, arrival_airport, departure_city, arrival_city))
+					'AND departure_time >= %s AND arrival_time <= %s AND departure_airport = %s AND arrival_airport = %s')
+			cursor.execute(query, (start_date, end_date, departure_airport, arrival_airport))
 			data = cursor.fetchall()
 			cursor.close()
-			return render_template('staff_home.html', username=session['username'], result=data, airline_name=airline_name)
+			return render_template('home_staff.html', username=session['username'], result=data, airline_name=session['airline_name'])
 			
 		#if we try to update the status
 		elif 'update_status' in request.form:
@@ -563,7 +562,7 @@ def home_staff():
 			cursor.execute(query, airline_name)
 			data = cursor.fetchall()
 			cursor.close()
-			return render_template('staff_home.html', username=session['username'], result=data, airline_name=airline_name, message=msg)
+			return render_template('home_staff.html', username=session['username'], result=data, airline_name=airline_name, message=msg)
 		#if instead we would like to view the passengers
 		else:		
 			airline_name = request.form['airline_name']
