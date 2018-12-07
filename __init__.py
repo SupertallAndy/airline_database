@@ -781,7 +781,13 @@ def revenue():
 	data_indirect = cursor.fetchone()
 	cursor.close()
 	
-	data = [ data_direct['direct_revenue'] if data_direct['direct_revenue'] else 0, data_indirect['indirect_revenue'] if data_indirect['indirect_revenue'] else 0]
+	data = []
+	# using float() to convert Decimal
+	# if no direct or indirect revenue set to 0
+	data.append(float(data_direct['direct_revenue']) if data_direct['direct_revenue'] else 0)
+	data.append(float(data_indirect['indirect_revenue']) if data_indirect['indirect_revenue'] else 0)
+
+	#data = [ data_direct['direct_revenue'] if data_direct['direct_revenue'] else 0, data_indirect['indirect_revenue'] if data_indirect['indirect_revenue'] else 0]
 	return render_template('revenue.html', airline_name = airline_name, result = data)
 
 @app.route('/top_destinations')

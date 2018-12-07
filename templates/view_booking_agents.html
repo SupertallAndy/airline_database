@@ -14,7 +14,7 @@
         {% for topAgent in result1month %}
             <tr>
                 <td>{{topAgent.booking_agent_id}}</td>
-                <td>{{topCity.ticket_sold}}</td>
+                <td>{{topAgent.ticket_sold}}</td>
             </tr>
         {% endfor %}
     </table>
@@ -26,7 +26,7 @@
         {% for topAgent in result1year %}
             <tr>
                 <td>{{topAgent.booking_agent_id}}</td>
-                <td>{{topCity.ticket_sold}}</td>
+                <td>{{topAgent.ticket_sold}}</td>
             </tr>
         {% endfor %}
     </table>
@@ -38,7 +38,7 @@
         {% for topAgent in result1month_com %}
             <tr>
                 <td>{{topAgent.booking_agent_id}}</td>
-                <td>{{topCity.total_commission}}</td>
+                <td>{{topAgent.total_commission}}</td>
             </tr>
         {% endfor %}
     </table>
