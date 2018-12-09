@@ -21,7 +21,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       #port=3307,
+                       port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -302,11 +302,13 @@ def customer_search_flight():
 		return render_template('index.html')
 	departure_airport = request.form['departure_airport']
 	arrival_airport = request.form['arrival_airport']
+	departure_time = request.form['departure_date']
+	arrival_time = request.form['arrival_date']
 	print(request.form)
 
 	cursor = conn.cursor()
-	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
-	cursor.execute(query, (departure_airport, arrival_airport))
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming" AND DATE(departure_time) LIKE %s AND DATE(arrival_time) LIKE %s'
+	cursor.execute(query, (departure_airport, arrival_airport, departure_time, arrival_time))
 	data = cursor.fetchall()
 	cursor.close()
 	#print(data)
@@ -386,11 +388,13 @@ def agent_search_flight():
 		return render_template('index.html')
 	departure_airport = request.form['departure_airport']
 	arrival_airport = request.form['arrival_airport']
+	departure_time = request.form['departure_date']
+	arrival_time = request.form['arrival_date']
 	print(request.form)
 
 	cursor = conn.cursor()
-	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
-	cursor.execute(query, (departure_airport, arrival_airport))
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming" AND DATE(departure_time) LIKE %s AND DATE(arrival_time) LIKE %s'
+	cursor.execute(query, (departure_airport, arrival_airport, departure_time, arrival_time))
 	data = cursor.fetchall()
 	#print(data)
 	return render_template('agent_search_flights.html', data = data)
