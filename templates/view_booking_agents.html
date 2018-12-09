@@ -33,9 +33,9 @@
 	<p>Top agents for the last year based on the total sale of the tickets</p>
     <table>
         <th>Agent ID</th>
-        <th>Total Commission</th>
+        <th>Total Sale of the tickets</th>
 
-        {% for topAgent in result1month_com %}
+        {% for topAgent in result1year_com %}
             <tr>
                 <td>{{topAgent.booking_agent_id}}</td>
                 <td>{{topAgent.total_commission}}</td>

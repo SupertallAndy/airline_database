@@ -685,14 +685,14 @@ def view_booking_agents():
 	cursor.execute(query1year, session['airline_name'])
 	data1year = cursor.fetchall()
 	
-	query1month_com = ('SELECT booking_agent_id, SUM(price) as total_commission FROM booking_agent NATURAL JOIN purchases NATURAL JOIN ticket NATURAL JOIN flight '
+	query1year_com = ('SELECT booking_agent_id, SUM(price) as total_commission FROM booking_agent NATURAL JOIN purchases NATURAL JOIN ticket NATURAL JOIN flight '
 						'WHERE airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 YEAR '
 						'GROUP BY booking_agent_id ORDER BY total_commission LIMIT 5')
-	cursor.execute(query1month_com, session['airline_name'])
-	data1month_com = cursor.fetchall()
+	cursor.execute(query1year_com, session['airline_name'])
+	data1year_com = cursor.fetchall()
 	
 	cursor.close()	
-	return render_template('view_booking_agents.html', airline_name=session['airline_name'], result1month=data1month, result1year=data1year, result1month_com=data1month_com)
+	return render_template('view_booking_agents.html', airline_name=session['airline_name'], result1month=data1month, result1year=data1year, result1year_com=data1year_com)
 	
 @app.route('/view_frequent_customers', methods=['GET', 'POST'])
 def view_frequent_customers():
