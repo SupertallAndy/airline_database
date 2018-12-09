@@ -750,14 +750,13 @@ def report():
 		elif request.form['interval'] == 'YEAR':
 			cursor = conn.cursor()
 			count = []
-			numOfYears = int(request.form['period'])
-			for i in range(12*numOfYears, 0, -1):
+			for i in range(12, 0, -1):
 				query = 'SELECT * FROM ticket NATURAL JOIN purchases WHERE airline_name = %s AND purchase_date < NOW() - INTERVAL %s MONTH and purchase_date >= NOW() - INTERVAL %s MONTH'
 				cursor.execute(query, (session['airline_name'], i-1, i))
 				count.append(len(cursor.fetchall()))
 			cursor.close()
 			totSellNum = sum(count)
-			msg = 'Number of tickets sold for last %s year: ' % numOfYears
+			msg = 'Number of tickets sold for the last year: '
 			return render_template('report.html', airline_name=session['airline_name'], sellStats=count, totSellNum=totSellNum, message=msg)
 	else:
 		airline_name = session['airline_name']
@@ -866,6 +865,7 @@ def authenticate(username, usertype):
 		query = 'SELECT * FROM airline_staff WHERE username LIKE %s'
 	cursor.execute(query, username)
 	data = cursor.fetchone()
+	cursor.close()
 	if data:
 		return "success"
 	else:
