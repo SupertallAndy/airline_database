@@ -21,7 +21,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       port=3307,
+                       #port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -766,20 +766,19 @@ def report():
 		airline_name = session['airline_name']
 		return render_template('report.html', airline_name= airline_name)
 
-#todo: visualize the revenue
-@app.route('/show_revenue')
-def revenue():
+@app.route('/show_revenue_last_month')
+def last_month_revenue():
 	username = session["username"]
 	if authenticate(username, 'staff') == 'failed':
 		session.pop('username', None)
 		return render_template('index.html')
 	airline_name = session['airline_name']
 	cursor = conn.cursor()
-	query_direct = 'SELECT SUM(price) AS direct_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND booking_agent_id IS NULL'
+	query_direct = 'SELECT SUM(price) AS direct_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 MONTH AND booking_agent_id IS NULL'
 	cursor.execute(query_direct, airline_name)
 	data_direct = cursor.fetchone()
 	
-	query_indirect = 'SELECT SUM(price) AS indirect_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND booking_agent_id IS NOT NULL'
+	query_indirect = 'SELECT SUM(price) AS indirect_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 MONTH AND booking_agent_id IS NOT NULL'
 	cursor.execute(query_indirect, airline_name)
 	data_indirect = cursor.fetchone()
 	cursor.close()
@@ -788,7 +787,30 @@ def revenue():
 	data.append(float(data_direct['direct_revenue']) if data_direct['direct_revenue'] else 0)
 	data.append(float(data_indirect['indirect_revenue']) if data_indirect['indirect_revenue'] else 0)
 
-	return render_template('revenue.html', airline_name = airline_name, result = data)
+	return render_template('last_month_revenue.html', airline_name = airline_name, result = data)
+
+@app.route('/show_revenue_last_year')
+def last_year_revenue():
+	username = session["username"]
+	if authenticate(username, 'staff') == 'failed':
+		session.pop('username', None)
+		return render_template('index.html')
+	airline_name = session['airline_name']
+	cursor = conn.cursor()
+	query_direct = 'SELECT SUM(price) AS direct_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 YEAR AND booking_agent_id IS NULL'
+	cursor.execute(query_direct, airline_name)
+	data_direct = cursor.fetchone()
+	
+	query_indirect = 'SELECT SUM(price) AS indirect_revenue FROM ticket NATURAL JOIN flight NATURAL JOIN purchases where airline_name = %s AND purchase_date <= NOW() and purchase_date > NOW() - INTERVAL 1 YEAR AND booking_agent_id IS NOT NULL'
+	cursor.execute(query_indirect, airline_name)
+	data_indirect = cursor.fetchone()
+	cursor.close()
+	
+	data = []
+	data.append(float(data_direct['direct_revenue']) if data_direct['direct_revenue'] else 0)
+	data.append(float(data_indirect['indirect_revenue']) if data_indirect['indirect_revenue'] else 0)
+
+	return render_template('last_year_revenue.html', airline_name = airline_name, result = data)
 
 @app.route('/top_destinations')
 def top_destinations():
