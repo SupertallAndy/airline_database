@@ -39,9 +39,8 @@ def search_flight():
 	departure_airport = request.form['departure_airport']
 	arrival_airport = request.form['arrival_airport']
 	print(departure_airport)
-
 	cursor = conn.cursor()
-	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming"'
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming" AND departure_time > now()'
 	cursor.execute(query, (departure_airport, arrival_airport))
 	data = cursor.fetchall()
 	cursor.close()
@@ -195,7 +194,7 @@ def registerascustomerAuth():
 		cursor.execute(ins, (email, name, encoded_password, building_number, street, city, state, phone_number, passport_number, passport_expiration, passport_country, date_of_birth ))
 		conn.commit()
 		cursor.close()
-		return render_template('index.html')
+		return render_template('index.html', message='You have registered as a customer!')
 
 @app.route("/customer")
 def home_customer():
@@ -205,12 +204,13 @@ def home_customer():
 @app.route("/customer/view_flights")
 def customer_view_flight():
 	username = session['username']
+	now = datetime.now()
 	print(username)
 	if authenticate(username, 'customer') == 'failed':
 		session.pop('username', None)
 		return render_template('index.html')
 	cursor = conn.cursor()
-	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "incoming"'
+	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "incoming" AND departure_time > now()'
 	cursor.execute(query, (username))
 	data = cursor.fetchall()
 	cursor.close()
@@ -348,7 +348,7 @@ def registerasagentAuth():
 		conn.commit()
 		cursor.close()
 		print("register success")
-		return render_template('index.html')
+		return render_template('index.html', message='You have registered as a booking agent!')
 
 @app.route("/agent/view_flights")
 def agent_view_flight():
@@ -478,6 +478,7 @@ def agent_top_customers():
 	data = cursor.fetchall()
 	print("*" * 10)
 	print(data)
+	legend1 = 'top customers (number of tickets)'
 	labels1 = []
 	values1 = []
 	for d in data:
@@ -492,6 +493,7 @@ def agent_top_customers():
 	print(data)
 	labels2 = []
 	values2 = []
+	legend2 = 'top customers (total commission)'
 	for d in data:
 		labels2.append(d['customer_email'])
 		values2.append(int(d['commission']))
@@ -531,7 +533,7 @@ def registerasstaffAuth():
 		cursor.execute(ins, (username, encoded_password, first_name, last_name, date_of_birth, airline_name))
 		conn.commit()
 		cursor.close()
-		return render_template('index.html')
+		return render_template('index.html', message='You have registered as an airline staff !')
 
 @app.route("/staff",methods = ['GET','POST'])
 def home_staff():

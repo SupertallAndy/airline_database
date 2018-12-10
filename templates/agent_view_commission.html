@@ -14,8 +14,8 @@
         <input type='Submit' value=Submit><br>
     </form>
     {% if data_range %}
-        <p>Your total commission during this time period: {{data_range['commission']}}</p> 
-        <p>Your total commission during this time period: {{data_range['commission']}}</p> 
+        <p>Total number of tickets purchased during this time period: {{data_range['num_tickets']}}</p> 
+        <p>Total commission during this time period: {{data_range['commission']}}</p> 
     {% endif %}
     
     <p><a href='/agent'>Home</a></p>
