@@ -205,12 +205,13 @@ def home_customer():
 @app.route("/customer/view_flights")
 def customer_view_flight():
 	username = session['username']
+	now = datetime.now()
 	print(username)
 	if authenticate(username, 'customer') == 'failed':
 		session.pop('username', None)
 		return render_template('index.html')
 	cursor = conn.cursor()
-	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "incoming"'
+	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "incoming" AND departure_time > now()'
 	cursor.execute(query, (username))
 	data = cursor.fetchall()
 	cursor.close()

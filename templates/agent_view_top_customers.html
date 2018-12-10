@@ -6,6 +6,7 @@
 </head>
 <body>
     <h1>View Your Top Consumers {{username}}</h1>
+    <h2>Top customers (number of tickets)</h2>
     <canvas id="chart1" width="600" height="400"></canvas>
     <script>
         var barData = {
@@ -13,14 +14,16 @@
                         "{{item}}",
                         {% endfor %}],
             datasets: [{
+                label: '{{legend1}}',
                 fillColor: "rgba(151,187,205,0.2)",
                 strokeColor: "rgba(151,187,205,1)",
                 pointColor: "rgba(151,187,205,1)",
                 data : [{% for item in values1 %}
                             {{item}},
                             {% endfor %}]
-                }]
+                }],
             }
+            
             var mychart = document.getElementById("chart1").getContext("2d");
             steps = 5
             max = 20
@@ -36,6 +39,7 @@
                 scaleShowLabels: true
             });
     </script>
+    <h2>Top customers (total commission)</h2>
     <canvas id="chart2" width="600" height="400"></canvas>
     <script>
         var barData = {
@@ -43,6 +47,7 @@
                         "{{item}}",
                         {% endfor %}],
             datasets: [{
+                legend: 'top customers (total commission)',
                 fillColor: "rgba(151,187,205,0.2)",
                 strokeColor: "rgba(151,187,205,1)",
                 pointColor: "rgba(151,187,205,1)",
