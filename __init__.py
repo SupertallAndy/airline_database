@@ -40,7 +40,7 @@ def search_flight():
 	arrival_airport = request.form['arrival_airport']
 	print(departure_airport)
 	cursor = conn.cursor()
-	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming" AND departure_time > now()'
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "Upcoming" AND departure_time > now()'
 	cursor.execute(query, (departure_airport, arrival_airport))
 	data = cursor.fetchall()
 	cursor.close()
@@ -210,7 +210,7 @@ def customer_view_flight():
 		session.pop('username', None)
 		return render_template('index.html')
 	cursor = conn.cursor()
-	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "incoming" AND departure_time > now()'
+	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight WHERE customer_email LIKE %s AND status LIKE "Upcoming" AND departure_time > now()'
 	cursor.execute(query, (username))
 	data = cursor.fetchall()
 	cursor.close()
@@ -307,7 +307,7 @@ def customer_search_flight():
 	print(request.form)
 
 	cursor = conn.cursor()
-	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming" AND DATE(departure_time) LIKE %s AND DATE(arrival_time) LIKE %s'
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "Upcoming" AND DATE(departure_time) LIKE %s AND DATE(arrival_time) LIKE %s'
 	cursor.execute(query, (departure_airport, arrival_airport, departure_time, arrival_time))
 	data = cursor.fetchall()
 	cursor.close()
@@ -365,7 +365,7 @@ def agent_view_flight():
 	id = data['booking_agent_id']
 	print("*"*10, id)
 	
-	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "incoming"'
+	query = 'SELECT * FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "Upcoming"'
 	cursor.execute(query, (id))
 	data = cursor.fetchall()
 	print(data)
@@ -393,7 +393,7 @@ def agent_search_flight():
 	print(request.form)
 
 	cursor = conn.cursor()
-	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "incoming" AND DATE(departure_time) LIKE %s AND DATE(arrival_time) LIKE %s'
+	query = 'SELECT * FROM flight WHERE departure_airport LIKE %s AND arrival_airport LIKE %s AND status LIKE "Upcoming" AND DATE(departure_time) LIKE %s AND DATE(arrival_time) LIKE %s'
 	cursor.execute(query, (departure_airport, arrival_airport, departure_time, arrival_time))
 	data = cursor.fetchall()
 	#print(data)
@@ -448,7 +448,7 @@ def agent_view_commission():
 	data = cursor.fetchone()
 	id = data['booking_agent_id']
 	print(id)
-	query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "incoming" AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH)'
+	query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "Upcoming" AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH)'
 	cursor.execute(query, id)
 	data = cursor.fetchone()
 	data_range = 0
@@ -456,7 +456,7 @@ def agent_view_commission():
 	if request.form:
 		start_date = request.form['start_date']
 		end_date = request.form['end_date']
-		query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "incoming" AND purchase_date BETWEEN %s and %s'
+		query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "Upcoming" AND purchase_date BETWEEN %s and %s'
 		cursor.execute(query, (id, start_date, end_date))
 		data_range = cursor.fetchone()
 		print(data_range)
