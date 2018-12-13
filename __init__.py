@@ -7,7 +7,7 @@ Created on Fri Nov  9 09:41:31 2018
 
 from flask import Flask, render_template, request, session, url_for, redirect, jsonify
 import pymysql.cursors
-from passlib.hash import md5_crypt
+from passlib.hash import md5_crypt, pbkdf2_sha256
 from datetime import datetime
 import json
 
@@ -21,7 +21,7 @@ conn = pymysql.connect(host='localhost',
                        password='',
                        db='airline',
                        charset='utf8mb4',
-                       #port=3307,
+                       port=3307,
                        cursorclass=pymysql.cursors.DictCursor)
 
 #give the secret key
@@ -64,22 +64,22 @@ def login_as_customer_auth():
 	print(username)
 
 	cursor = conn.cursor()
-	query = 'SELECT * FROM customer WHERE email = %s'
+	query = 'SELECT * FROM customer WHERE email = %s AND password = MD5(%s)'
 	
-	cursor.execute(query, (username))
+	cursor.execute(query, (username, password))
 	data = cursor.fetchone()
 	cursor.close()
 
 	error = None
 	if data:
-		if md5_crypt.verify(password, data['password']):
-			session['username'] = username
-			return redirect(url_for('home_customer'))
-		else:
-			error = 'Invalid password'
-			return render_template('login_customer.html', error = error)
+		# if pbkdf2_sha256.verify(password, data['password']):
+		session['username'] = username
+		return redirect(url_for('home_customer'))
+		# else:
+		# 	error = 'Invalid password'
+		# 	return render_template('login_customer.html', error = error)
 	else:
-		error = 'Invalid username'
+		error = 'Invalid username or wrong password'
 		return render_template('login_customer.html', error = error)
 
 @app.route('/agent/login')
@@ -96,20 +96,20 @@ def login_as_agent_auth():
 	print(username, password)
 	
 	cursor = conn.cursor()
-	query = 'SELECT * FROM booking_agent WHERE email = %s'
-	cursor.execute(query, (username))
+	query = 'SELECT * FROM booking_agent WHERE email = %s AND password = MD5(%s)'
+	cursor.execute(query, (username, password))
 	data = cursor.fetchone()
 	cursor.close()
 	error = None
 	if data:
-		if md5_crypt.verify(password, data['password']):
-			session['username'] = username
-			return redirect(url_for('home_agent'))
-		else:
-			error = 'Invalid password'
-			return render_template('login_agent.html', error = error)
+		# if md5_crypt.verify(password, data['password']):
+		session['username'] = username
+		return redirect(url_for('home_agent'))
+		# else:
+		# 	error = 'Invalid password'
+		# 	return render_template('login_agent.html', error = error)
 	else:
-		error = 'Invalid username'
+		error = 'Invalid username or wrong password'
 		return render_template('login_agent.html', error = error)
 
 @app.route("/agent")
@@ -130,21 +130,21 @@ def login_as_staff_auth():
 	password = request.form['password']
 	
 	cursor = conn.cursor()
-	query = 'SELECT * FROM airline_staff WHERE username = %s'
-	cursor.execute(query, (username))
+	query = 'SELECT * FROM airline_staff WHERE username = %s AND password = MD5(%s)'
+	cursor.execute(query, (username, password))
 	data = cursor.fetchone()
 	cursor.close()
 	error = None
 	if data:
-		if md5_crypt.verify(password, data['password']):
-			session['username'] = username
-			session['airline_name'] = data['airline_name'] if 'airline_name' in data else None
-			return redirect(url_for('home_staff'))
-		else:
-			error = 'Invalid password'
-			return render_template('login_staff.html', error = error)
+		# if md5_crypt.verify(password, data['password']):
+		session['username'] = username
+		session['airline_name'] = data['airline_name'] if 'airline_name' in data else None
+		return redirect(url_for('home_staff'))
+		# else:
+		# 	error = 'Invalid password'
+		# 	return render_template('login_staff.html', error = error)
 	else:
-		error = 'Invalid username'
+		error = 'Invalid username or wrong password'
 		return render_template('login_staff.html', error = error)
 
 #Define route for register
@@ -189,9 +189,9 @@ def registerascustomerAuth():
 		error = "This email has already registered"
 		return render_template('register_customer.html', error = error)
 	else:
-		encoded_password = md5_crypt.encrypt(password)
-		ins = 'INSERT INTO customer VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-		cursor.execute(ins, (email, name, encoded_password, building_number, street, city, state, phone_number, passport_number, passport_expiration, passport_country, date_of_birth ))
+		# encoded_password = md5_crypt.hash(password)
+		ins = 'INSERT INTO customer VALUES(%s,%s,MD5(%s),%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+		cursor.execute(ins, (email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration, passport_country, date_of_birth ))
 		conn.commit()
 		cursor.close()
 		return render_template('index.html', message='You have registered as a customer!')
@@ -342,9 +342,9 @@ def registerasagentAuth():
 		error = "This email has already registered"
 		return render_template('register_agent.html', error = error)
 	else:
-		encoded_password = md5_crypt.encrypt(password)
-		ins = 'INSERT INTO booking_agent VALUES(%s,%s,%s)'
-		cursor.execute(ins, (email, encoded_password, booking_agent_id ))
+		# encoded_password = md5_crypt.hash(password)
+		ins = 'INSERT INTO booking_agent VALUES(%s,MD5(%s),%s)'
+		cursor.execute(ins, (email, password, booking_agent_id ))
 		conn.commit()
 		cursor.close()
 		print("register success")
@@ -528,9 +528,9 @@ def registerasstaffAuth():
 		error = "This username has already registered"
 		return render_template('register_staff.html', error = error)
 	else:
-		encoded_password = md5_crypt.encrypt(password)
-		ins = 'INSERT INTO airline_staff VALUES(%s,%s,%s, %s,%s,%s)'
-		cursor.execute(ins, (username, encoded_password, first_name, last_name, date_of_birth, airline_name))
+		# encoded_password = md5_crypt.encrypt(password)
+		ins = 'INSERT INTO airline_staff VALUES(%s,MD5(%s),%s, %s,%s,%s)'
+		cursor.execute(ins, (username, password, first_name, last_name, date_of_birth, airline_name))
 		conn.commit()
 		cursor.close()
 		return render_template('index.html', message='You have registered as an airline staff !')
