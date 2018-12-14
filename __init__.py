@@ -448,7 +448,7 @@ def agent_view_commission():
 	data = cursor.fetchone()
 	id = data['booking_agent_id']
 	print(id)
-	query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "Upcoming" AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH)'
+	query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND purchase_date > DATE_SUB(now(), INTERVAL 1 MONTH)'
 	cursor.execute(query, id)
 	data = cursor.fetchone()
 	data_range = 0
@@ -456,7 +456,7 @@ def agent_view_commission():
 	if request.form:
 		start_date = request.form['start_date']
 		end_date = request.form['end_date']
-		query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND status LIKE "Upcoming" AND purchase_date BETWEEN %s and %s'
+		query = 'SELECT count(*) AS num_tickets, 0.1 * SUM(price) AS commission FROM purchases NATURAL JOIN ticket NATURAL JOIN flight NATURAL JOIN booking_agent WHERE booking_agent_id = %s AND purchase_date BETWEEN %s and %s'
 		cursor.execute(query, (id, start_date, end_date))
 		data_range = cursor.fetchone()
 		print(data_range)
